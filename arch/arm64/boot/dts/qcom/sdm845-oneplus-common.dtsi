@@ -433,6 +433,11 @@
 	status = "okay";
 };
 
+&slpi_pas {
+	status = "okay";
+	firmware-name = "qcom/sdm845/oneplus6/slpi.mbn";
+};
+
 &mdss {
 	status = "okay";
 };
