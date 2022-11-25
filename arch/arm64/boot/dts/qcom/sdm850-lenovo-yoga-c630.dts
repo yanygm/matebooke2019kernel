@@ -80,6 +80,26 @@
 		};
 	};
 
+	/*
+	 * The display 1.2v rail is controlled by a GPIO
+	 * on the PMIC
+	 */
+	sw_edp_1p2: edp-1p2-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "edp-1p2";
+
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sw_edp_1p2_en>;
+
+		gpio = <&pm8998_gpio 9 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		vin-supply = <&vreg_l2a_1p2>;
+	};
+
 	sn65dsi86_refclk: sn65dsi86-refclk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -155,6 +175,7 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
+		/* Required for panel */
 		vddpx_10:
 		vreg_l2a_1p2: ldo2 {
 			regulator-min-microvolt = <1200000>;
@@ -217,6 +238,7 @@
 		vreg_l13a_2p95: ldo13 {
 		};
 
+		/* Required for panel */
 		vreg_l14a_1p88: ldo14 {
 			regulator-min-microvolt = <1880000>;
 			regulator-max-microvolt = <1880000>;
@@ -406,6 +428,8 @@
 
 		enable-gpios = <&tlmm 96 GPIO_ACTIVE_HIGH>;
 
+		vcca-supply = <&sw_edp_1p2>;
+		vcc-supply = <&sw_edp_1p2>;
 		vpll-supply = <&vreg_l14a_1p88>;
 		vccio-supply = <&vreg_l14a_1p88>;
 
@@ -478,6 +502,19 @@
 &mss_pil {
 	status = "okay";
 	firmware-name = "qcom/sdm850/LENOVO/81JL/qcdsp1v2850.mbn", "qcom/sdm850/LENOVO/81JL/qcdsp2850.mbn";
+};
+
+
+&pm8998_gpio {
+	/* This pin is pulled down by a fixed resistor */
+	sw_edp_1p2_en: pm8998-gpio9-state {
+		pinconf {
+			pins = "gpio9";
+			function = "normal";
+			bias-disable;
+			qcom,drive-strength = <0>;
+		};
+	};
 };
 
 &qup_i2c10_default {
