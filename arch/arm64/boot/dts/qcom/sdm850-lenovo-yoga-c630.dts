@@ -81,7 +81,7 @@
 	};
 
 	/*
-	 * The display 1.2v rail is controlled by a GPIO
+	 * The DSI bridge 1.2v rail is controlled by a GPIO
 	 * on the PMIC
 	 */
 	sw_edp_1p2: edp-1p2-regulator {
@@ -98,6 +98,23 @@
 		enable-active-high;
 
 		vin-supply = <&vreg_l2a_1p2>;
+	};
+
+	/* The display power rail is also GPIO controlled
+	 * sourced by VPH_PWR which is not modelled here
+	 */
+	vlcm_3p3: vlcm-3p3-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcm";
+
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&vlcm_3p3_en>;
+
+		gpio = <&tlmm 88 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 
 	sn65dsi86_refclk: sn65dsi86-refclk {
@@ -462,6 +479,12 @@
 			panel: panel {
 				compatible = "boe,nv133fhm-n61";
 				backlight = <&backlight>;
+				power-supply = <&vlcm_3p3>;
+				/* EC also controls this? */
+				//enable-gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&bl_enable>;
 
 				port {
 					panel_in_edp: endpoint {
@@ -680,6 +703,20 @@
 
 		input-enable;
 		bias-disable;
+	};
+
+	vlcm_3p3_en: vlcm-3p3-en-pin {
+		pins = "gpio88";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	bl_enable: vl-enable-pin {
+		pins = "gpio11";
+		function = "gpio";
+		drive-strength = <16>;
+		bias-pull-up;
 	};
 };
 
