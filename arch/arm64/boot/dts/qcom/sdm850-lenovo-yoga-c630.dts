@@ -561,7 +561,7 @@
 };
 
 &mdss_dp {
-	status = "okay";
+	status = "disabled";
 	data-lanes = <0 1>;
 
 	ports {
