@@ -398,6 +398,8 @@ static const struct hid_device_id hid_battery_quirks[] = {
 	  HID_BATTERY_QUIRK_IGNORE },
 	{ HID_I2C_DEVICE(USB_VENDOR_ID_ELAN, I2C_DEVICE_ID_LENOVO_YOGA_C630_TOUCHSCREEN),
 	  HID_BATTERY_QUIRK_IGNORE },
+	{ HID_I2C_DEVICE(USB_VENDOR_ID_ELAN, I2C_DEVICE_ID_LENOVO_YOGA_C630_TOUCHSCREEN_ALT),
+	  HID_BATTERY_QUIRK_IGNORE },
 	{}
 };
 
@@ -519,7 +521,7 @@ static int hidinput_setup_battery(struct hid_device *dev, unsigned report_type,
 
 	quirks = find_battery_quirk(dev);
 
-	hid_dbg(dev, "device %x:%x:%x %d quirks %d\n",
+	hid_info(dev, "device %x:%x:%x %d quirks %d\n",
 		dev->bus, dev->vendor, dev->product, dev->version, quirks);
 
 	if (quirks & HID_BATTERY_QUIRK_IGNORE)
