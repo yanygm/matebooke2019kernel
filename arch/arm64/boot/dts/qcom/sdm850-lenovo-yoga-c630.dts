@@ -95,7 +95,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&sw_edp_1p2_en>;
 
-		gpio = <&pm8998_gpio 9 GPIO_ACTIVE_HIGH>;
+		gpio = <&pm8998_gpios 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
 		vin-supply = <&vreg_l2a_1p2>;
@@ -581,7 +581,7 @@
 };
 
 
-&pm8998_gpio {
+&pm8998_gpios {
 	/* This pin is pulled down by a fixed resistor */
 	sw_edp_1p2_en: pm8998-gpio9-state {
 		pinconf {
