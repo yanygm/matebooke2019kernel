@@ -1288,24 +1288,12 @@ __power_supply_register(struct device *parent,
 	atomic_inc(&psy->use_cnt);
 	psy->initialized = true;
 
-	/* This has to be done after updating use_cnt and initialized
-	 * otherwise when __thermal_cooling_device_register calls back
-	 * to ->get_max_state() the psy core will return -EAGAIN..
-	 */
-	rc = psy_register_cooler(psy);
-	if (rc)
-		goto register_cooler_failed;
-
 	queue_delayed_work(system_power_efficient_wq,
 			   &psy->deferred_register_work,
 			   POWER_SUPPLY_DEFERRED_REGISTER_TIME);
 
 	return psy;
 
-register_cooler_failed:
-	power_supply_remove_hwmon_sysfs(psy);
-	psy->initialized = false;
-	atomic_dec(&psy->use_cnt);
 add_hwmon_sysfs_failed:
 	power_supply_remove_triggers(psy);
 create_triggers_failed:
