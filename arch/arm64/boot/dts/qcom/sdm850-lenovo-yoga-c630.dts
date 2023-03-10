@@ -60,6 +60,11 @@
 
 	/* Reserved memory changes for IPA */
 	reserved-memory {
+		cont_splash_mem: memory@80400000 {
+			reg = <0x0 0x80400000 0x0 0x960000>;
+			no-map;
+		};
+
 		wlan_msa_mem: memory@8c400000 {
 			reg = <0 0x8c400000 0 0x100000>;
 			no-map;
