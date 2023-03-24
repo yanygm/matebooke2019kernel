@@ -702,6 +702,11 @@
 	status = "okay";
 };
 
+&slpi_pas {
+	firmware-name = "qcom/sdm845/axolotl/slpi.mbn";
+	status = "okay";
+};
+
 &sound {
 	model = "SHIFT6mq";
 	compatible = "qcom,sdm845-sndcard";
