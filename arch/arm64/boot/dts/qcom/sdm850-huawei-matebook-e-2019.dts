@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * Huawei Matebook E 2019
+ * HUAWEI MateBook E (2019)
  *
  * Copyright (c) 2023, NewWheat
  */
@@ -32,7 +32,7 @@
 /delete-node/ &spss_mem;
 
 / {
-	model = "Huawei Matebook E 2019";
+	model = "HUAWEI MateBook E (2019)";
 	compatible = "huawei,pak-al09", "qcom,sdm845";
 	chassis-type = "convertible";
 
@@ -45,20 +45,19 @@
 		compatible = "gpio-keys";
 
 		pinctrl-names = "default";
-		pinctrl-0 = <&lid_pin_active>, <&mode_pin_active>;
-
-		switch-lid {
-			gpios = <&tlmm 124 GPIO_ACTIVE_HIGH>;
-			linux,input-type = <EV_SW>;
-			linux,code = <SW_LID>;
-			wakeup-source;
-			wakeup-event-action = <EV_ACT_DEASSERTED>;
-		};
+		pinctrl-0 = <&mode_pin_active &volume_up_gpio>;
 
 		switch-mode {
-			gpios = <&tlmm 95 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 79 GPIO_ACTIVE_HIGH>;
 			linux,input-type = <EV_SW>;
 			linux,code = <SW_TABLET_MODE>;
+		};
+
+		key-vol-up {
+			label = "Volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			gpios = <&pm8998_gpios 6 GPIO_ACTIVE_LOW>;
+			debounce-interval = <15>;
 		};
 	};
 
@@ -73,7 +72,7 @@
 		};
 
 		cont_splash_mem: memory@80100000 {
-			reg = <0x0 0x80100000 0x0 0x960000>;
+			reg = <0x0 0x80100000 0x0 0xd00000>;
 			no-map;
 		};
 
@@ -148,7 +147,7 @@
 
 		vin-supply = <&vreg_l2a_1p2>;
 	};
-	
+
 	/* The display power rail is also GPIO controlled
 	 * sourced by VPH_PWR which is not modelled here
 	 */
@@ -178,15 +177,6 @@
 		#clock-cells = <0>;
 
 		clock-frequency = <24000000>;
-	};
-
-	backlight: backlight {
-		status = "disabled";
-		compatible = "gpio-backlight";
-
-		gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
-		default-on;
-		//pwms = <&sn65dsi86 1000000>;
 	};
 
 	battery: battery {
@@ -223,7 +213,7 @@
 };
 
 &adsp_pas {
-	firmware-name = "qcom/sdm850/huawei/al09/qcadsp850.mbn";
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/qcadsp850.mbn";
 	status = "okay";
 };
 
@@ -344,6 +334,9 @@
 
 		vddpx_2:
 		vreg_l13a_2p95: ldo13 {
+			regulator-min-microvolt = <2960000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		/* Required for panel */
@@ -382,6 +375,9 @@
 		};
 
 		vreg_l21a_2p95: ldo21 {
+			regulator-min-microvolt = <2960000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vddd_camera_1v2:
@@ -436,7 +432,6 @@
 		vreg_lvs1a_1p8: lvs1 {
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_lvs2a_1p8: lvs2 {
@@ -444,18 +439,45 @@
 	};
 };
 
+&camss {
+	status = "okay";
+
+	vdda-phy-supply = <&vreg_l1a_0p875>;
+    vdda-pll-supply = <&vreg_l26a_1p2>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			csi0_ep: endpoint {
+				data-lanes = <0 1 2 3>;
+				remote-endpoint = <&ov7251_ep>;
+			};
+		};
+	};
+};
+
+&cci {
+	status = "okay";
+};
+
 &cdsp_pas {
-	firmware-name = "qcom/sdm850/huawei/al09/qccdsp850.mbn";
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/qccdsp850.mbn";
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 
 &dsi0 {
 	status = "okay";
-	vdda-supply = <&vreg_l26a_1p2>;
+	vdda-supply = <&vdda_mipi_dsi0_1p2>;
 
 	ports {
 		port@1 {
-			endpoint {
+			dsi0_out: endpoint {
 				remote-endpoint = <&sn65dsi86_in_a>;
 				data-lanes = <0 1 2 3>;
 			};
@@ -465,29 +487,8 @@
 
 &dsi0_phy {
 	status = "okay";
-	vdds-supply = <&vreg_l1a_0p875>;
+	vdds-supply = <&vdda_mipi_dsi0_pll>;
 };
-
-/*
-&dsi1 {
-	status = "okay";
-	vdda-supply = <&vreg_l26a_1p3>;
-
-	ports {
-		port@1 {
-			endpoint {
-				remote-endpoint = <&sn65dsi86_in_b>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
-	};
-};
-
-&dsi1_phy {
-	status = "okay";
-	vdds-supply = <&vreg_l1a_0p876>;
-};
-*/
 
 &gcc {
 	protected-clocks = <GCC_QSPI_CORE_CLK>,
@@ -505,7 +506,7 @@
 	status = "okay";
 	zap-shader {
 		memory-region = <&gpu_mem>;
-		//firmware-name = "qcom/sdm850/huawei/al09/qcdxkmsuc850.mbn";
+		firmware-name = "qcom/sdm850/HUAWEI/AL09/qcdxkmsuc850.mbn";
 	};
 };
 
@@ -522,6 +523,31 @@
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&i2c5_hid_active>;
+	};
+};
+
+&i2c7 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	embedded-controller@76 {
+		compatible = "lenovo,yoga-c630-ec";
+		reg = <0x76>;
+
+		interrupts-extended = <&tlmm 140 IRQ_TYPE_LEVEL_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ec_int_state>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		connector@0 {
+			compatible = "usb-c-connector";
+			reg = <0>;
+			power-role = "dual";
+			data-role = "dual";
+		};
 	};
 };
 
@@ -546,7 +572,6 @@
 		clock-names = "refclk";
 
 		no-hpd;
-		#pwm-cells = <1>;
 
 		ports {
 			#address-cells = <1>;
@@ -559,15 +584,6 @@
 				};
 			};
 
-			/*
-			port@1 {
-				reg = <1>;
-				sn65dsi86_in_b: endpoint {
-					remote-endpoint = <&dsi1_out>;
-				};
-			};
-			*/
-
 			port@1 {
 				reg = <1>;
 				sn65dsi86_out: endpoint {
@@ -579,10 +595,7 @@
 		aux-bus {
 			panel: panel {
 				compatible = "innolux,p120zdg-bf1";
-				backlight = <&backlight>;
 				power-supply = <&vlcm_3p3>;
-				//EC also controls this?
-				//enable-gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
 
 				pinctrl-names = "default";
 				pinctrl-0 = <&bl_enable>;
@@ -601,7 +614,7 @@
 	status = "okay";
 	qcom,gsi-loader = "self";
 	memory-region = <&ipa_fw_mem>;
-	firmware-name = "qcom/sdm850/huawei/al09/ipa_fws.elf";
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/ipa_fws.elf";
 };
 
 &llcc {
@@ -609,28 +622,51 @@
 };
 
 &mdss {
-	status = "disabled";
+	status = "okay";
 };
-
-/*
-&mdss_dp {
-	status = "disabled";
-	data-lanes = <0 1>;
-
-	ports {
-		port@1 {
-			reg = <1>;
-			mdss_dp_out: endpoint {
-				remote-endpoint = <&lenovo_ec_dp_in>;
-			};
-		};
-	};
-};
-*/
 
 &mss_pil {
 	status = "okay";
-	firmware-name = "qcom/sdm850/huawei/al09/qcdsp1v2850.mbn", "qcom/sdm850/huawei/al09/qcdsp2850.mbn";
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/qcdsp1v2850.mbn", "qcom/sdm850/HUAWEI/AL09/qcdsp2850.mbn";
+};
+
+&pcie0 {
+	vdda-supply = <&vdda_pcie_core>;
+	vdda-phy-supply = <&vdda_pcie_1p2>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_default>;
+
+	status = "okay";
+};
+
+&pcie0_phy {
+	vdda-phy-supply = <&vdda_hp_pcie_core>;
+	vdda-pll-supply = <&vdda_hp_pcie_1p2>;
+
+	status = "okay";
+};
+
+&pcie1 {
+	vdda-supply = <&vdda_pcie_core>;
+	vdda-phy-supply = <&vdda_pcie_1p2>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_default>;
+
+	status = "okay";
+};
+
+&pcie1_phy {
+	vdda-phy-supply = <&vdda_hp_pcie_core>;
+	vdda-pll-supply = <&vdda_hp_pcie_1p2>;
+
+	status = "okay";
+};
+
+&pm8998_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
 };
 
 &pm8998_gpios {
@@ -643,14 +679,19 @@
 			qcom,drive-strength = <0>;
 		};
 	};
+
+	volume_up_gpio: pm8998-gpio6-state {
+		pinconf {
+			pins = "gpio6";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			qcom,drive-strength = <0>;
+		};
+	};
 };
 
 &qup_i2c10_default {
-	drive-strength = <2>;
-	bias-disable;
-};
-
-&qup_i2c12_default {
 	drive-strength = <2>;
 	bias-disable;
 };
@@ -696,9 +737,29 @@
 	};
 };
 
+&sdhc_2 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdc2_default_state &sdc2_card_det_n>;
+
+	vmmc-supply = <&vreg_l21a_2p95>;
+	vqmmc-supply = <&vreg_l13a_2p95>;
+
+	bus-width = <4>;
+	cd-gpios = <&tlmm 126 GPIO_ACTIVE_HIGH>;
+};
+
+&slpi_pas {
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/qcslpi850.mbn";
+	status = "okay";
+};
+
 &sound {
 	compatible = "lenovo,yoga-c630-sndcard", "qcom,sdm845-sndcard";
 	model = "HUAWEI-PAK_AL09-M1040";
+
+	status = "okay";
 
 	audio-routing =
 		"RX_BIAS", "MCLK",
@@ -795,16 +856,8 @@
 		drive-strength = <2>;
 	};
 
-	lid_pin_active: lid-pin-state {
-		pins = "gpio124";
-		function = "gpio";
-
-		input-enable;
-		bias-disable;
-	};
-
 	mode_pin_active: mode-pin-state {
-		pins = "gpio95";
+		pins = "gpio79";
 		function = "gpio";
 
 		input-enable;
@@ -828,19 +881,89 @@
 	bl_enable: vl-enable-pin {
 		pins = "gpio11";
 		function = "gpio";
-		drive-strength = <16>;
-		bias-pull-up;
+		drive-strength = <2>;
+		bias-disable;
 	};
 
-	/*
 	ec_int_state: ec-int-state {
-		pins = "gpio20";
+		pins = "gpio140";
 		function = "gpio";
 
 		input-enable;
 		bias-disable;
 	};
-	*/
+
+	pcie0_default: pcie0-default-state {
+		pin1-pins {
+			pins = "gpio39";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		pin2-pins {
+			pins = "gpio35";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		pin3-pins {
+		       pins = "gpio37";
+		       function = "gpio";
+		       drive-strength = <2>;
+		       bias-pull-up;
+	       };
+	};
+
+	pcie1_default: pcie1-default-state {
+		pin1-pins {
+			pins = "gpio102";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		pin2-pins {
+			pins = "gpio104";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+
+		pin3-pins {
+		       pins = "gpio113";
+		       function = "gpio";
+		       drive-strength = <2>;
+		       bias-pull-up;
+	       };
+	};
+
+	sdc2_default_state: sdc2-default-state {
+		clk-pins {
+			pins = "sdc2_clk";
+			bias-disable;
+			drive-strength = <16>;
+		};
+
+		cmd-pins {
+			pins = "sdc2_cmd";
+			bias-pull-up;
+			drive-strength = <10>;
+		};
+
+		data-pins {
+			pins = "sdc2_data";
+			bias-pull-up;
+			drive-strength = <10>;
+		};
+	};
+
+	sdc2_card_det_n: sd-card-det-n-state {
+		pins = "gpio126";
+		function = "gpio";
+		bias-pull-up;
+	};
 };
 
 &uart6 {
@@ -932,8 +1055,7 @@
 
 &venus {
 	status = "okay";
-	/* This isn't required now */
-	//firmware-name = "qcom/sdm850/huawei/al09/qcvss850.mbn";
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/qcvss850.mbn";
 };
 
 &wcd9340 {
@@ -943,8 +1065,8 @@
 	vdd-tx-supply = <&vreg_s4a_1p8>;
 	vdd-rx-supply = <&vreg_s4a_1p8>;
 	vdd-io-supply = <&vreg_s4a_1p8>;
-	qcom,mbhc-buttons-vthreshold-microvolt = <75000 100000 225000 250000 250000 250000 250000 250000>;
-	qcom,mbhc-headset-vthreshold-microvolt = <1000000>;
+	qcom,mbhc-buttons-vthreshold-microvolt = <50000 75000 100000 100000 100000 100000 100000 100000>;
+	qcom,mbhc-headset-vthreshold-microvolt = <100000>;
 	qcom,mbhc-headphone-vthreshold-microvolt = <50000>;
 
 	swm: swm@c85 {
@@ -978,37 +1100,4 @@
 	vdd-3.3-ch1-supply = <&vreg_l23a_3p3>;
 
 	qcom,snoc-host-cap-8bit-quirk;
-};
-
-&crypto {
-	status = "okay";
-};
-
-&slpi_pas {
-	firmware-name = "qcom/sdm850/huawei/al09/qcslpi850.mbn";
-	status = "okay";
-};
-
-&cci {
-	status = "okay";
-};
-
-&camss {
-	//firmware-name = "qcom/sdm850/huawei/al09/CAMERA_ICP_AAAAAA.elf";
-	status = "okay";
-
-	vdda-phy-supply = <&vreg_l1a_0p875>;
-    vdda-pll-supply = <&vreg_l26a_1p2>;
-
-	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		port@0 {
-			reg = <0>;
-			csi0_ep: endpoint {
-				data-lanes = <0 1 2 3>;
-				remote-endpoint = <&ov7251_ep>;
-			};
-		};
-	};
 };
