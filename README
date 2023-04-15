@@ -1,6 +1,7 @@
 Linux kernel for Huawei Matebook E 2019
 
 Currently supported:
+    volume key
     power key
     touchscreen
     stylus
@@ -9,9 +10,11 @@ Currently supported:
     usb
     keyboard
     ufs
-    sound
+    audio
+    gpu
+    cellular network
 
-Testing platform: Ubuntu 22.04
+Testing platform: Ubuntu 22.04 and Debian 12
 
 How to compile the kernel:
     https://forum.renegade-project.tech/t/install-archlinux-on-your-oneplus-6t-oneplus-6-or-pocophone-f1/2530#
