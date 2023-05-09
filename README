@@ -1,6 +1,6 @@
 Linux kernel for Huawei Matebook E 2019
 
-Currently supported:
+Currently supported (needs proper firmware files placed in /lib/firmware):
     volume key
     power key
     touchscreen
@@ -9,8 +9,9 @@ Currently supported:
     bluetooth
     usb
     keyboard
+    touchpad
     ufs
-    audio
+    audio (EXTREMELY unstable)
     gpu
     cellular network
 
