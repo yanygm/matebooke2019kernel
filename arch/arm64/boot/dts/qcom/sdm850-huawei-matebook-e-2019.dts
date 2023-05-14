@@ -606,7 +606,7 @@
 	pinctrl-0 = <&pcie0_default>;
 
 	status = "okay";
-	perst-gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 	enable-gpios = <&tlmm 134 GPIO_ACTIVE_HIGH>;
 };
 
@@ -860,13 +860,13 @@
 
 	pcie0_default: pcie0-default-state {
 		clkreq-pins {
-			pins = "gpio39";
+			pins = "gpio35";
 			function = "pci_e0";
 			bias-pull-up;
 		};
 
 		reset-n-pins {
-			pins = "gpio35";
+			pins = "gpio39";
 			function = "gpio";
 
 			drive-strength = <2>;
