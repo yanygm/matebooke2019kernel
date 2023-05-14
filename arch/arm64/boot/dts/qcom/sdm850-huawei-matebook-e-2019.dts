@@ -172,13 +172,7 @@
 		clock-frequency = <19200000>;
 	};
 
-	camera_xclk: camera_xclk {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-
-		clock-frequency = <24000000>;
-	};
-
+	/*
 	battery: battery {
 		compatible = "simple-battery";
 
@@ -187,29 +181,7 @@
 		energy-full-design-microwatt-hours = <36330000>;
 		charge-full-design-microamp-hours = <4780000>;
 	};
-
-	ov7251: camera-sensor {
-		compatible = "ovti,ov7251";
-
-		enable-gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&camera_bw_default>;
-
-		clocks = <&camera_xclk>;
-		clock-names = "xclk";
-
-		//vdddo-supply = <&camera_dovdd_1v8>;
-		vdda-supply = <&vdda_camera_2v8>;
-		vddd-supply = <&vddd_camera_1v2>;
-
-		port {
-			ov7251_ep: endpoint {
-				clock-lanes = <1>;
-				data-lanes = <0>;
-				remote-endpoint = <&csi0_ep>;
-			};
-		};
-	};
+	*/
 };
 
 &adsp_pas {
@@ -380,7 +352,6 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
-		vddd_camera_1v2:
 		vreg_l22a_2p85: ldo22 {
 			regulator-min-microvolt = <2800000>;
 			regulator-max-microvolt = <2800000>;
@@ -428,7 +399,6 @@
 		vreg_l28a_3p0: ldo28 {
 		};
 
-		vdda_camera_2v8:
 		vreg_lvs1a_1p8: lvs1 {
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
@@ -440,26 +410,14 @@
 };
 
 &camss {
-	status = "okay";
+	status = "disabled";
 
 	vdda-phy-supply = <&vreg_l1a_0p875>;
     vdda-pll-supply = <&vreg_l26a_1p2>;
-
-	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		port@0 {
-			reg = <0>;
-			csi0_ep: endpoint {
-				data-lanes = <0 1 2 3>;
-				remote-endpoint = <&ov7251_ep>;
-			};
-		};
-	};
 };
 
 &cci {
-	status = "okay";
+	status = "disabled";
 };
 
 &cdsp_pas {
@@ -508,6 +466,11 @@
 		memory-region = <&gpu_mem>;
 		firmware-name = "qcom/sdm850/HUAWEI/AL09/qcdxkmsuc850.mbn";
 	};
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <400000>;
 };
 
 &i2c5 {
@@ -610,6 +573,11 @@
 	};
 };
 
+&i2c12 {
+	status = "okay";
+	clock-frequency = <400000>;
+};
+
 &ipa {
 	status = "okay";
 	qcom,gsi-loader = "self";
@@ -638,6 +606,8 @@
 	pinctrl-0 = <&pcie0_default>;
 
 	status = "okay";
+	perst-gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+	enable-gpios = <&tlmm 134 GPIO_ACTIVE_HIGH>;
 };
 
 &pcie0_phy {
@@ -655,6 +625,7 @@
 	pinctrl-0 = <&pcie1_default>;
 
 	status = "okay";
+	perst-gpios = <&tlmm 102 GPIO_ACTIVE_LOW>;
 };
 
 &pcie1_phy {
@@ -759,7 +730,8 @@
 	compatible = "lenovo,yoga-c630-sndcard", "qcom,sdm845-sndcard";
 	model = "HUAWEI-PAK_AL09-M1040";
 
-	status = "okay";
+	// Audio is broken, so set it to "disable" by default.
+	status = "disbale";
 
 	audio-routing =
 		"RX_BIAS", "MCLK",
@@ -773,21 +745,21 @@
 	mm1-dai-link {
 		link-name = "MultiMedia1";
 		cpu {
-			sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA1>;
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
 		};
 	};
 
 	mm2-dai-link {
 		link-name = "MultiMedia2";
 		cpu {
-			sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA2>;
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
 		};
 	};
 
 	mm3-dai-link {
 		link-name = "MultiMedia3";
 		cpu {
-			sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA3>;
+			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
 		};
 	};
 
@@ -864,13 +836,6 @@
 		bias-disable;
 	};
 
-	camera_bw_default: camera_bw_default-state {
-		pins = "gpio63";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
 	vlcm_3p3_en: vlcm-3p3-en-pin {
 		pins = "gpio88";
 		function = "gpio";
@@ -894,49 +859,61 @@
 	};
 
 	pcie0_default: pcie0-default-state {
-		pin1-pins {
+		clkreq-pins {
 			pins = "gpio39";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-		};
-
-		pin2-pins {
-			pins = "gpio35";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-		};
-
-		pin3-pins {
-		       pins = "gpio37";
-		       function = "gpio";
-		       drive-strength = <2>;
-		       bias-pull-up;
-	       };
-	};
-
-	pcie1_default: pcie1-default-state {
-		pin1-pins {
-			pins = "gpio102";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-		};
-
-		pin2-pins {
-			pins = "gpio104";
-			function = "gpio";
-			drive-strength = <2>;
+			function = "pci_e0";
 			bias-pull-up;
 		};
 
-		pin3-pins {
-		       pins = "gpio113";
-		       function = "gpio";
-		       drive-strength = <2>;
-		       bias-pull-up;
-	       };
+		reset-n-pins {
+			pins = "gpio35";
+			function = "gpio";
+
+			drive-strength = <2>;
+			output-low;
+			bias-pull-down;
+		};
+
+		wake-n-pins {
+		    pins = "gpio37";
+		    function = "gpio";
+
+			drive-strength = <2>;
+		    bias-pull-up;
+	    };
+	};
+
+	pcie1_default: pcie1-default-state {
+		perst-n-pins {
+			pins = "gpio102";
+			function = "gpio";
+
+			drive-strength = <16>;
+			bias-disable;
+		};
+
+		clkreq-pins {
+			pins = "gpio102";
+			function = "pci_e1";
+			bias-pull-up;
+		};
+
+		reset-n-pins {
+			pins = "gpio104";
+			function = "gpio";
+
+			drive-strength = <16>;
+			bias-pull-up;
+			output-high;
+		};
+
+		wake-n-pins {
+	    	pins = "gpio113";
+			function = "gpio";
+
+		    drive-strength = <2>;
+		    bias-pull-up;
+	    };
 	};
 
 	sdc2_default_state: sdc2-default-state {
