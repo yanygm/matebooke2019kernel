@@ -156,6 +156,7 @@ struct erofs_sb_info {
 
 	/* what we really care is nid, rather than ino.. */
 	erofs_nid_t root_nid;
+	erofs_nid_t packed_nid;
 	/* used for statfs, f_files - f_favail */
 	u64 inos;
 
@@ -306,7 +307,7 @@ struct erofs_inode {
 
 	unsigned char datalayout;
 	unsigned char inode_isize;
-	unsigned short xattr_isize;
+	unsigned int xattr_isize;
 
 	unsigned int xattr_shared_count;
 	unsigned int *xattr_shared_xattrs;
@@ -486,7 +487,7 @@ static inline void *erofs_vm_map_ram(struct page **pages, unsigned int count)
 void *erofs_get_pcpubuf(unsigned int requiredpages);
 void erofs_put_pcpubuf(void *ptr);
 int erofs_pcpubuf_growsize(unsigned int nrpages);
-void erofs_pcpubuf_init(void);
+void __init erofs_pcpubuf_init(void);
 void erofs_pcpubuf_exit(void);
 
 int erofs_register_sysfs(struct super_block *sb);
@@ -545,7 +546,7 @@ static inline int z_erofs_fill_inode(struct inode *inode) { return -EOPNOTSUPP; 
 #endif	/* !CONFIG_EROFS_FS_ZIP */
 
 #ifdef CONFIG_EROFS_FS_ZIP_LZMA
-int z_erofs_lzma_init(void);
+int __init z_erofs_lzma_init(void);
 void z_erofs_lzma_exit(void);
 int z_erofs_load_lzma_config(struct super_block *sb,
 			     struct erofs_super_block *dsb,

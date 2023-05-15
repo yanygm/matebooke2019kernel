@@ -2175,8 +2175,7 @@ static const struct regmap_config tas2559_i2c_regmap = {
 	.max_register = 128,
 };
 
-static int tas2559_i2c_probe(struct i2c_client *pClient,
-			     const struct i2c_device_id *pID)
+static int tas2559_i2c_probe(struct i2c_client *pClient)
 {
 	struct tas2559_priv *pTAS2559;
 	int nResult;

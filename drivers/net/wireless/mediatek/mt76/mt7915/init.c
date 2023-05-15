@@ -89,6 +89,7 @@ static ssize_t mt7915_thermal_temp_store(struct device *dev,
 	     val < phy->throttle_temp[MT7915_CRIT_TEMP_IDX])) {
 		dev_err(phy->dev->mt76.dev,
 			"temp1_max shall be greater than temp1_crit.");
+		mutex_unlock(&phy->dev->mt76.mutex);
 		return -EINVAL;
 	}
 
@@ -202,6 +203,10 @@ static int mt7915_thermal_init(struct mt7915_phy *phy)
 			phy->cdev = cdev;
 	}
 
+	/* initialize critical/maximum high temperature */
+	phy->throttle_temp[MT7915_CRIT_TEMP_IDX] = MT7915_CRIT_TEMP;
+	phy->throttle_temp[MT7915_MAX_TEMP_IDX] = MT7915_MAX_TEMP;
+
 	if (!IS_REACHABLE(CONFIG_HWMON))
 		return 0;
 
@@ -209,10 +214,6 @@ static int mt7915_thermal_init(struct mt7915_phy *phy)
 						       mt7915_hwmon_groups);
 	if (IS_ERR(hwmon))
 		return PTR_ERR(hwmon);
-
-	/* initialize critical/maximum high temperature */
-	phy->throttle_temp[MT7915_CRIT_TEMP_IDX] = MT7915_CRIT_TEMP;
-	phy->throttle_temp[MT7915_MAX_TEMP_IDX] = MT7915_MAX_TEMP;
 
 	return 0;
 }
@@ -383,7 +384,6 @@ mt7915_init_wiphy(struct mt7915_phy *phy)
 	ieee80211_hw_set(hw, SUPPORTS_RX_DECAP_OFFLOAD);
 	ieee80211_hw_set(hw, SUPPORTS_MULTI_BSSID);
 	ieee80211_hw_set(hw, WANT_MONITOR_VIF);
-	ieee80211_hw_set(hw, SUPPORTS_VHT_EXT_NSS_BW);
 
 	hw->max_tx_fragments = 4;
 
@@ -396,6 +396,9 @@ mt7915_init_wiphy(struct mt7915_phy *phy)
 	}
 
 	if (phy->mt76->cap.has_5ghz) {
+		struct ieee80211_sta_vht_cap *vht_cap;
+
+		vht_cap = &phy->mt76->sband_5g.sband.vht_cap;
 		phy->mt76->sband_5g.sband.ht_cap.cap |=
 			IEEE80211_HT_CAP_LDPC_CODING |
 			IEEE80211_HT_CAP_MAX_AMSDU;
@@ -403,19 +406,28 @@ mt7915_init_wiphy(struct mt7915_phy *phy)
 			IEEE80211_HT_MPDU_DENSITY_4;
 
 		if (is_mt7915(&dev->mt76)) {
-			phy->mt76->sband_5g.sband.vht_cap.cap |=
+			vht_cap->cap |=
 				IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
 				IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+
+			if (!dev->dbdc_support)
+				vht_cap->cap |=
+					IEEE80211_VHT_CAP_SHORT_GI_160 |
+					IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ |
+					FIELD_PREP(IEEE80211_VHT_CAP_EXT_NSS_BW_MASK, 1);
 		} else {
-			phy->mt76->sband_5g.sband.vht_cap.cap |=
+			vht_cap->cap |=
 				IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
 				IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
 
 			/* mt7916 dbdc with 2g 2x2 bw40 and 5g 2x2 bw160c */
-			phy->mt76->sband_5g.sband.vht_cap.cap |=
+			vht_cap->cap |=
 				IEEE80211_VHT_CAP_SHORT_GI_160 |
 				IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
 		}
+
+		if (!is_mt7915(&dev->mt76) || !dev->dbdc_support)
+			ieee80211_hw_set(hw, SUPPORTS_VHT_EXT_NSS_BW);
 	}
 
 	mt76_set_stream_caps(phy->mt76, true);
@@ -841,9 +853,13 @@ mt7915_set_stream_he_txbf_caps(struct mt7915_phy *phy,
 	int sts = hweight8(phy->mt76->chainmask);
 	u8 c, sts_160 = sts;
 
-	/* mt7915 doesn't support bw160 */
-	if (is_mt7915(&dev->mt76))
-		sts_160 = 0;
+	/* Can do 1/2 of STS in 160Mhz mode for mt7915 */
+	if (is_mt7915(&dev->mt76)) {
+		if (!dev->dbdc_support)
+			sts_160 /= 2;
+		else
+			sts_160 = 0;
+	}
 
 #ifdef CONFIG_MAC80211_MESH
 	if (vif == NL80211_IFTYPE_MESH_POINT)
@@ -944,10 +960,15 @@ mt7915_init_he_caps(struct mt7915_phy *phy, enum nl80211_band band,
 	int i, idx = 0, nss = hweight8(phy->mt76->antenna_mask);
 	u16 mcs_map = 0;
 	u16 mcs_map_160 = 0;
-	u8 nss_160 = nss;
+	u8 nss_160;
 
-	/* Can't do 160MHz with mt7915 */
-	if (is_mt7915(&dev->mt76))
+	if (!is_mt7915(&dev->mt76))
+		nss_160 = nss;
+	else if (!dev->dbdc_support)
+		/* Can do 1/2 of NSS streams in 160Mhz mode for mt7915 */
+		nss_160 = nss / 2;
+	else
+		/* Can't do 160MHz with mt7915 dbdc */
 		nss_160 = 0;
 
 	for (i = 0; i < 8; i++) {

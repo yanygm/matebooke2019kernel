@@ -61,12 +61,6 @@
 
 	/* Reserved memory changes */
 	reserved-memory {
-		/* Bootloader display framebuffer region */
-		cont_splash_mem: memory@80400000 {
-			reg = <0x0 0x80400000 0x0 0x960000>;
-			no-map;
-		};
-
 		qseecom_mem: memory@8b500000 {
 			reg = <0 0x8b500000 0 0xa00000>;
 			no-map;
@@ -662,7 +656,7 @@
 		left_spkr: speaker@0,3 {
 			compatible = "sdw10217211000";
 			reg = <0 3>;
-			powerdown-gpios = <&wcdgpio 1 GPIO_ACTIVE_HIGH>;
+			powerdown-gpios = <&wcdgpio 1 GPIO_ACTIVE_LOW>;
 			#thermal-sensor-cells = <0>;
 			sound-name-prefix = "SpkrLeft";
 			#sound-dai-cells = <0>;
@@ -670,7 +664,7 @@
 
 		right_spkr: speaker@0,4 {
 			compatible = "sdw10217211000";
-			powerdown-gpios = <&wcdgpio 2 GPIO_ACTIVE_HIGH>;
+			powerdown-gpios = <&wcdgpio 2 GPIO_ACTIVE_LOW>;
 			reg = <0 4>;
 			#thermal-sensor-cells = <0>;
 			sound-name-prefix = "SpkrRight";

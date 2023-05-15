@@ -659,8 +659,7 @@ static void nt36xxx_disable_regulators(void *data)
 	regulator_bulk_disable(NT36XXX_NUM_SUPPLIES, ts->supplies);
 }
 
-static int nt36xxx_i2c_probe(struct i2c_client *hw_client,
-			     const struct i2c_device_id *id)
+static int nt36xxx_i2c_probe(struct i2c_client *hw_client)
 {
 	struct nt36xxx_i2c *ts;
 	struct input_dev *input;

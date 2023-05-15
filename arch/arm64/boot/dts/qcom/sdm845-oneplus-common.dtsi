@@ -8,9 +8,11 @@
 /dts-v1/;
 
 #include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/sound/qcom,q6afe.h>
 #include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,q6voice.h>
 
 #include "sdm845.dtsi"
 #include "sdm845-wcd9340.dtsi"
@@ -29,7 +31,7 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	gpio-keys {
+	volume-keys {
 		compatible = "gpio-keys";
 		label = "Volume keys";
 		autorepeat;
@@ -49,6 +51,47 @@
 			linux,code = <KEY_VOLUMEUP>;
 			gpios = <&pm8998_gpios 6 GPIO_ACTIVE_LOW>;
 			debounce-interval = <15>;
+		};
+	};
+
+	tri-state-key {
+		compatible = "gpio-keys";
+		label = "Tri-state key";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&tri_state_key_default>;
+
+		state-top {
+			label = "Tri-state key top";
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_PROG1>;
+			gpios = <&tlmm 126 GPIO_ACTIVE_HIGH>;
+			interrupt-parent = <&tlmm>;
+			interrupts = <126 IRQ_TYPE_EDGE_BOTH>;
+			debounce-interval = <50>;
+			linux,can-disable;
+		};
+
+		state-middle {
+			label = "Tri-state key middle";
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_PROG2>;
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			interrupt-parent = <&tlmm>;
+			interrupts = <52 IRQ_TYPE_EDGE_BOTH>;
+			debounce-interval = <50>;
+			linux,can-disable;
+		};
+
+		state-bottom {
+			label = "Tri-state key bottom";
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_PROG3>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+			interrupt-parent = <&tlmm>;
+			interrupts = <24 IRQ_TYPE_EDGE_BOTH>;
+			debounce-interval = <50>;
+			linux,can-disable;
 		};
 	};
 
@@ -433,11 +476,6 @@
 	status = "okay";
 };
 
-&slpi_pas {
-	status = "okay";
-	firmware-name = "qcom/sdm845/oneplus6/slpi.mbn";
-};
-
 &mdss {
 	status = "okay";
 };
@@ -476,7 +514,24 @@
 	qcom,wave-play-rate-us = <4255>;
 };
 
+&pmi8998_charger {
+	status = "okay";
+};
+
 &pmi8998_rradc {
+	status = "okay";
+};
+
+
+&q6cvp {
+	status = "okay";
+};
+
+&q6cvs {
+	status = "okay";
+};
+
+&q6mvm {
 	status = "okay";
 };
 
@@ -546,6 +601,11 @@
 	bias-disable;
 };
 
+&slpi_pas {
+	firmware-name = "qcom/sdm845/oneplus6/slpi.mbn";
+	status = "okay";
+};
+
 &sound {
 	compatible = "qcom,sdm845-sndcard";
 	pinctrl-0 = <&quat_mi2s_active &quat_mi2s_sd0_active &quat_mi2s_sd1_active>;
@@ -591,6 +651,13 @@
 		link-name = "MultiMedia6";
 		cpu {
 			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA6>;
+		};
+	};
+
+	voicemmode1-dai-link {
+		link-name = "VoiceMMode1";
+		cpu {
+			sound-dai = <&q6voicedai VOICEMMODE1>;
 		};
 	};
 
@@ -764,8 +831,9 @@
 &tlmm {
 	gpio-reserved-ranges = <0 4>, <81 4>;
 
+	// The GPIOs have a hardware pullup.
 	tri_state_key_default: tri-state-key-default-state {
-		pins = "gpio40", "gpio42", "gpio26";
+		pins = "gpio126", "gpio52", "gpio24";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;

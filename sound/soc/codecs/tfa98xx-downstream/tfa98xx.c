@@ -3028,8 +3028,7 @@ static struct bin_attribute dev_attr_reg = {
 	.write = tfa98xx_reg_write,
 };
 
-static int tfa98xx_i2c_probe(struct i2c_client *i2c,
-	const struct i2c_device_id *id)
+static int tfa98xx_i2c_probe(struct i2c_client *i2c)
 {
 	struct snd_soc_dai_driver *dai;
 	struct tfa98xx *tfa98xx;
