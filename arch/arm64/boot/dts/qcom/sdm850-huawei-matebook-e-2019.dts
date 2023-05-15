@@ -30,6 +30,7 @@
 /delete-node/ &venus_mem;
 /delete-node/ &mba_region;
 /delete-node/ &spss_mem;
+/delete-node/ &cont_splash_mem;
 
 / {
 	model = "HUAWEI MateBook E (2019)";

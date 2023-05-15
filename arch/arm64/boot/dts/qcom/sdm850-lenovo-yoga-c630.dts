@@ -26,6 +26,7 @@
 /delete-node/ &gpu_mem;
 /delete-node/ &adsp_mem;
 /delete-node/ &wlan_msa_mem;
+/delete-node/ &cont_splash_mem;
 
 / {
 	model = "Lenovo Yoga C630";

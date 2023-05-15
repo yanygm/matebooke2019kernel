@@ -327,8 +327,7 @@ static int fts_parse_dt(struct fts_ts_data *data)
 	return 0;
 }
 
-static int fts_ts_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int fts_ts_probe(struct i2c_client *client)
 {
 	int error = 0;
 	struct fts_ts_data *data;
