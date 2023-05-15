@@ -527,7 +527,7 @@ static int hidinput_setup_battery(struct hid_device *dev, unsigned report_type,
 
 	quirks = find_battery_quirk(dev);
 
-	hid_info(dev, "device %x:%x:%x %d quirks %d\n",
+	hid_dbg(dev, "device %x:%x:%x %d quirks %d\n",
 		dev->bus, dev->vendor, dev->product, dev->version, quirks);
 
 	if (quirks & HID_BATTERY_QUIRK_IGNORE)
