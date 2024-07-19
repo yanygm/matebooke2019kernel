@@ -7,6 +7,7 @@
 
 /dts-v1/;
 
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/input/gpio-keys.h>
 #include <dt-bindings/input/input.h>
@@ -34,12 +35,16 @@
 
 / {
 	model = "HUAWEI MateBook E (2019)";
-	compatible = "huawei,pak-al09", "qcom,sdm845";
+	compatible = "huawei,planck", "qcom,sdm845";
 	chassis-type = "convertible";
 
 	aliases {
 		serial0 = &uart9;
-		hsuart0 = &uart6;
+		serial1 = &uart6;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
 	};
 
 	gpio-keys {
@@ -52,6 +57,7 @@
 			gpios = <&tlmm 79 GPIO_ACTIVE_HIGH>;
 			linux,input-type = <EV_SW>;
 			linux,code = <SW_TABLET_MODE>;
+			wakeup-source;
 		};
 
 		key-vol-up {
@@ -59,11 +65,12 @@
 			linux,code = <KEY_VOLUMEUP>;
 			gpios = <&pm8998_gpios 6 GPIO_ACTIVE_LOW>;
 			debounce-interval = <15>;
+			wakeup-source;
 		};
 	};
 
 	reserved-memory {
-		rmtfs_mem: rmtfs@99000000 {
+		rmtfs_mem: rmtfs-mem@99000000 {
 			compatible = "qcom,rmtfs-mem";
 			reg = <0 0x99000000 0 0x200000>;
 			no-map;
@@ -72,62 +79,62 @@
 			qcom,vmid = <15>;
 		};
 
-		cont_splash_mem: memory@80100000 {
+		cont_splash_mem: cont-splash-mem@80100000 {
 			reg = <0x0 0x80100000 0x0 0xd00000>;
 			no-map;
 		};
 
-		qseecom_mem: memory@8b500000 {
+		qseecom_mem: qseecom-mem@8b500000 {
 			reg = <0 0x8b500000 0 0xa00000>;
 			no-map;
 		};
 
-		wlan_msa_mem: memory@8c400000 {
+		wlan_msa_mem: wlan-msa-mem@8c400000 {
 			reg = <0 0x8c400000 0 0x100000>;
 			no-map;
 		};
 
-		slpi_mem: memory@8c500000 {
+		slpi_mem: slpi-mem@8c500000 {
 			reg = <0 0x8c500000 0 0x1200000>;
 			no-map;
 		};
 
-		ipa_fw_mem: memory@8d700000 {
+		ipa_fw_mem: ipa-fw-mem@8d700000 {
 			reg = <0 0x8d700000 0 0x100000>;
 			no-map;
 		};
 
-		gpu_mem: memory@99200000 {
+		gpu_mem: gpu-mem@99200000 {
 			reg = <0 0x99200000 0 0x5000>;
 			no-map;
 		};
 
-		mpss_region: memory@8e000000 {
+		mpss_region: mpss-region@8e000000 {
 			reg = <0 0x8e000000 0 0x8000000>;
 			no-map;
 		};
 
-		adsp_mem: memory@96000000 {
+		adsp_mem: adsp-mem@96000000 {
 			reg = <0 0x96000000 0 0x2000000>;
 			no-map;
 		};
 
-		cdsp_mem: memory@98000000 {
+		cdsp_mem: cdsp-mem@98000000 {
 			reg = <0 0x98000000 0 0x800000>;
 			no-map;
 		};
 
-		venus_mem: memory@99205000 {
-			reg = <0 0x99205000 0 0x500000>;
+		venus_mem: venus-mem@98800000 {
+			reg = <0 0x98800000 0 0x500000>;
 			no-map;
 		};
 
-		mba_region: memory@98d00000 {
+		mba_region: mba-region@98d00000 {
 			reg = <0 0x98d00000 0 0x200000>;
 			no-map;
 		};
 
-		spss_mem: memory@98f00000 {
+		spss_mem: spss-mem@98f00000 {
 			reg = <0 0x98f00000 0 0x100000>;
 			no-map;
 		};
@@ -135,7 +142,7 @@
 
 	sw_edp_1p2: edp-1p2-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "edp-1p2";
+		regulator-name = "sw_edp_1p2";
 
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1200000>;
@@ -149,23 +156,6 @@
 		vin-supply = <&vreg_l2a_1p2>;
 	};
 
-	/* The display power rail is also GPIO controlled
-	 * sourced by VPH_PWR which is not modelled here
-	 */
-	vlcm_3p3: vlcm-3p3-regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "vlcm";
-
-		regulator-min-microvolt = <1200000>;
-		regulator-max-microvolt = <1200000>;
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&vlcm_3p3_en>;
-
-		gpio = <&tlmm 88 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
 	sn65dsi86_refclk: sn65dsi86-refclk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -173,16 +163,103 @@
 		clock-frequency = <19200000>;
 	};
 
-	/*
-	battery: battery {
-		compatible = "simple-battery";
+	vph_pwr: regulator-vph-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "vph_pwr";
 
-		device-chemistry = "lithium-ion-polymer";
-		voltage-max-design-microvolt = <7600000>;
-		energy-full-design-microwatt-hours = <36330000>;
-		charge-full-design-microamp-hours = <4780000>;
+		regulator-min-microvolt = <3700000>;
+		regulator-max-microvolt = <3700000>;
+
+		regulator-always-on;
 	};
-	*/
+
+	vlcm_3v3: regulator-vlcm-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vlcm_3v3";
+
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&tlmm 88 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		
+		vin-supply = <&vph_pwr>;
+	};
+
+	cam0_dvdd_1v2: cam0-dvdd-1v2-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "cam0_dvdd_1v2";
+		
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		
+		//gpio = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+		
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+		
+		vin-supply = <&vph_pwr>;
+	};
+
+	cam0_avdd_2v8: cam0-avdd-2v8-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "cam0_avdd_2v8";
+		
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		
+		//gpio = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+
+		vin-supply = <&vph_pwr>;
+	};
+
+	pcie0_3p3v_dual: vldo-3v3-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "pcie0_3v3_dual";
+
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie0_pwren_state>;
+
+		vin-supply = <&vph_pwr>;
+	};
+
+	panel: panel {
+		compatible = "innolux,p120zdg-bf1";
+		power-supply = <&vlcm_3v3>;
+		no-hpd;
+
+		port {
+			panel_in_edp: endpoint {
+				remote-endpoint = <&sn65dsi86_out>;
+			};
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_indicator_en>;
+
+		camera_indicator_led: led-0 {
+			label = "white:camera-indicator";
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "flash";
+		};
+	};
 };
 
 &adsp_pas {
@@ -195,10 +272,32 @@
 		compatible = "qcom,pm8998-rpmh-regulators";
 		qcom,pmic-id = "a";
 
+		vdd-s1-supply = <&vph_pwr>;
+		vdd-s2-supply = <&vph_pwr>;
+		vdd-s3-supply = <&vph_pwr>;
+		vdd-s4-supply = <&vph_pwr>;
+		vdd-s5-supply = <&vph_pwr>;
+		vdd-s6-supply = <&vph_pwr>;
+		vdd-s7-supply = <&vph_pwr>;
+		vdd-s8-supply = <&vph_pwr>;
+		vdd-s9-supply = <&vph_pwr>;
+		vdd-s10-supply = <&vph_pwr>;
+		vdd-s11-supply = <&vph_pwr>;
+		vdd-s12-supply = <&vph_pwr>;
+		vdd-s13-supply = <&vph_pwr>;
+		vdd-l1-l27-supply = <&vreg_s7a_1p025>;
 		vdd-l2-l8-l17-supply = <&vreg_s3a_1p35>;
+		vdd-l3-l11-supply = <&vreg_s7a_1p025>;
+		vdd-l4-l5-supply = <&vreg_s7a_1p025>;
+		vdd-l6-supply = <&vph_pwr>;
 		vdd-l7-l12-l14-l15-supply = <&vreg_s5a_2p04>;
+		vdd-l26-supply = <&vreg_s3a_1p35>;
+		vin-lvs-1-2-supply = <&vreg_s4a_1p8>;
 
 		vreg_s2a_1p125: smps2 {
+			regulator-min-microvolt = <1100000>;
+			regulator-max-microvolt = <1100000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_s3a_1p35: smps3 {
@@ -214,12 +313,15 @@
 		};
 
 		vreg_s5a_2p04: smps5 {
-			regulator-min-microvolt = <2040000>;
+			regulator-min-microvolt = <1904000>;
 			regulator-max-microvolt = <2040000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_s7a_1p025: smps7 {
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <1028000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vdd_qusb_hs0:
@@ -246,7 +348,6 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
-		/* Required for panel */
 		vddpx_10:
 		vreg_l2a_1p2: ldo2 {
 			regulator-min-microvolt = <1200000>;
@@ -256,6 +357,9 @@
 		};
 
 		vreg_l3a_1p0: ldo3 {
+			regulator-min-microvolt = <1000000>;
+			regulator-max-microvolt = <1000000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vdd_wcss_cx:
@@ -269,8 +373,8 @@
 
 		vddpx_13:
 		vreg_l6a_1p8: ldo6 {
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
+			regulator-min-microvolt = <1856000>;
+			regulator-max-microvolt = <1856000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
@@ -281,15 +385,27 @@
 		};
 
 		vreg_l8a_1p2: ldo8 {
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1248000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l9a_1p8: ldo9 {
+			regulator-min-microvolt = <1704000>;
+			regulator-max-microvolt = <2928000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l10a_1p8: ldo10 {
+			regulator-min-microvolt = <1704000>;
+			regulator-max-microvolt = <2928000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l11a_1p0: ldo11 {
+			regulator-min-microvolt = <1000000>;
+			regulator-max-microvolt = <1048000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vdd_qfprom:
@@ -307,23 +423,28 @@
 
 		vddpx_2:
 		vreg_l13a_2p95: ldo13 {
-			regulator-min-microvolt = <2960000>;
+			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <2960000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
-		/* Required for panel */
 		vreg_l14a_1p88: ldo14 {
-			regulator-min-microvolt = <1880000>;
-			regulator-max-microvolt = <1880000>;
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 			regulator-always-on;
 		};
 
 		vreg_l15a_1p8: ldo15 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l16a_2p7: ldo16 {
+			regulator-min-microvolt = <2704000>;
+			regulator-max-microvolt = <2704000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l17a_1p3: ldo17 {
@@ -333,48 +454,53 @@
 		};
 
 		vreg_l18a_2p7: ldo18 {
+			regulator-min-microvolt = <2704000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l19a_3p0: ldo19 {
-			regulator-min-microvolt = <3100000>;
-			regulator-max-microvolt = <3108000>;
+			regulator-min-microvolt = <2856000>;
+			regulator-max-microvolt = <3104000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l20a_2p95: ldo20 {
-			regulator-min-microvolt = <2960000>;
+			regulator-min-microvolt = <2704000>;
 			regulator-max-microvolt = <2960000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l21a_2p95: ldo21 {
-			regulator-min-microvolt = <2960000>;
+			regulator-min-microvolt = <2704000>;
 			regulator-max-microvolt = <2960000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l22a_2p85: ldo22 {
-			regulator-min-microvolt = <2800000>;
-			regulator-max-microvolt = <2800000>;
+			regulator-min-microvolt = <2864000>;
+			regulator-max-microvolt = <3312000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+			
+			regulator-always-on;
 		};
 
 		vreg_l23a_3p3: ldo23 {
-			regulator-min-microvolt = <3300000>;
+			regulator-min-microvolt = <3000000>;
 			regulator-max-microvolt = <3312000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vdda_qusb_hs0_3p1:
 		vreg_l24a_3p075: ldo24 {
-			regulator-min-microvolt = <3075000>;
-			regulator-max-microvolt = <3083000>;
+			regulator-min-microvolt = <3088000>;
+			regulator-max-microvolt = <3088000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l25a_3p3: ldo25 {
-			regulator-min-microvolt = <3104000>;
-			regulator-max-microvolt = <3112000>;
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3312000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
@@ -393,60 +519,145 @@
 		vdda_usb2_ss_1p2:
 		vreg_l26a_1p2: ldo26 {
 			regulator-min-microvolt = <1200000>;
-			regulator-max-microvolt = <1208000>;
+			regulator-max-microvolt = <1200000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_l28a_3p0: ldo28 {
+			regulator-min-microvolt = <2856000>;
+			regulator-max-microvolt = <3008000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
 		vreg_lvs1a_1p8: lvs1 {
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
+			
+			regulator-always-on;
 		};
 
 		vreg_lvs2a_1p8: lvs2 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+	};
+
+	regulators-1 {
+		compatible = "qcom,pm8005-rpmh-regulators";
+		qcom,pmic-id = "c";
+
+		vdd-s1-supply = <&vph_pwr>;
+		vdd-s2-supply = <&vph_pwr>;
+		vdd-s3-supply = <&vph_pwr>;
+		vdd-s4-supply = <&vph_pwr>;
+
+		vreg_s2c_0p752: smps2 {
+			regulator-min-microvolt = <752000>;
+			regulator-max-microvolt = <752000>;
 		};
 	};
 };
 
 &camss {
-	status = "disabled";
+	status = "okay";
 
-	vdda-phy-supply = <&vreg_l1a_0p875>;
-    vdda-pll-supply = <&vreg_l26a_1p2>;
+	vdda-phy-supply = <&vdda_mipi_csi0_0p9>;
+	vdda-pll-supply = <&vdda_mipi_csi_1p25>;
+	//vdda-csi0-supply = <&vdda_mipi_csi0_0p9>;
+	//vdda-csi1-supply = <&vdda_mipi_csi1_0p9>;
+	//vdda-csi2-supply = <&vdda_mipi_csi2_0p9>;
+
+	/*
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			csiphy0_ep: endpoint {
+				data-lanes = <0 1>;
+				remote-endpoint = <&s5k3l6xx_ep>;
+			};
+		};
+	};
+	*/
 };
 
 &cci {
-	status = "disabled";
-};
-
-&cdsp_pas {
-	firmware-name = "qcom/sdm850/HUAWEI/AL09/qccdsp850.mbn";
 	status = "okay";
 };
-
-&crypto {
-	status = "okay";
+/*
+/ {
+    fake-reg-mclk0 {
+        compatible = "regulator-fixed-clock";
+        regulator-name = "fake-reg-mclk0";
+        pinctrl-names = "default";
+        pinctrl-0 = <&cam_mclk0_default>;
+        clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
+        regulator-always-on;
+    };
+	fake-reg-mclk1 {
+        compatible = "regulator-fixed-clock";
+        regulator-name = "fake-reg-mclk1";
+        pinctrl-names = "default";
+        pinctrl-0 = <&cam_mclk1_default>;
+        clocks = <&clock_camcc CAM_CC_MCLK1_CLK>;
+        regulator-always-on;
+    };
 };
 
-&dsi0 {
-	status = "okay";
-	vdda-supply = <&vdda_mipi_dsi0_1p2>;
+&tlmm {
+    cam_mclk0_default: cam-mclk0-default {
+        pins = "gpio13";
+        function = "cam_mclk";
+        drive-strength = <2>;
+        bias-disable;
+    };
+	cam_mclk1_default: cam-mclk1-default {
+        pins = "gpio15";
+        function = "cam_mclk";
+        drive-strength = <2>;
+        bias-disable;
+    };
+};
+*/
+/*
+&cci_i2c0 {
+	rear-camera@c {
+		status = "disabled";
+		compatible = "samsung,s5k3l6xx";
+		reg = <0x0c>;
 
-	ports {
-		port@1 {
-			dsi0_out: endpoint {
-				remote-endpoint = <&sn65dsi86_in_a>;
-				data-lanes = <0 1 2 3>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam0_default>;
+
+		clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
+		clock-names = "mclk";
+		clock-frequency = <24000000>;
+
+		power-domains = <&clock_camcc TITAN_TOP_GDSC>;
+
+		rstn-gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+
+		ldo-supply = <&vreg_l22a_2p85>;
+		vdda-supply = <&cam0_avdd_2v8>;		//analog power 2.8V
+		vddd-supply = <&cam0_dvdd_1v2>;		//VDDD digital power 1.2V, camera expects 0.95V-1.15V
+		vddio-supply = <&vreg_lvs1a_1p8>;	//I/O power supply 1.8V
+
+		//flash-leds = <&camera_indicator_led>;
+		orientation = <1>;
+
+		port {
+			s5k3l6xx_ep: endpoint {
+				data-lanes = <1 2>;
+				remote-endpoint = <&csiphy0_ep>;
 			};
 		};
 	};
 };
-
-&dsi0_phy {
+*/
+&cdsp_pas {
+	firmware-name = "qcom/sdm850/HUAWEI/AL09/qccdsp850.mbn";
 	status = "okay";
-	vdds-supply = <&vdda_mipi_dsi0_pll>;
 };
 
 &gcc {
@@ -484,6 +695,7 @@
 		hid-descr-addr = <0x1>;
 
 		interrupts-extended = <&tlmm 125 IRQ_TYPE_LEVEL_LOW>;
+		wakeup-source;
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&i2c5_hid_active>;
@@ -494,24 +706,15 @@
 	status = "okay";
 	clock-frequency = <400000>;
 
-	embedded-controller@76 {
-		compatible = "lenovo,yoga-c630-ec";
+	embedded_controller: ec@76 {
+		compatible = "huawei,planck-ec";
 		reg = <0x76>;
 
-		interrupts-extended = <&tlmm 140 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts-extended = <&tlmm 24 IRQ_TYPE_LEVEL_LOW>;
+		wakeup-source;
 
 		pinctrl-names = "default";
-		pinctrl-0 = <&ec_int_state>;
-
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		connector@0 {
-			compatible = "usb-c-connector";
-			reg = <0>;
-			power-role = "dual";
-			data-role = "dual";
-		};
+		pinctrl-0 = <&ec_int_default>;
 	};
 };
 
@@ -522,6 +725,7 @@
 	sn65dsi86: bridge@2c {
 		compatible = "ti,sn65dsi86";
 		reg = <0x2c>;
+
 		pinctrl-names = "default";
 		pinctrl-0 = <&sn65dsi86_pin_active>;
 
@@ -543,8 +747,8 @@
 
 			port@0 {
 				reg = <0>;
-				sn65dsi86_in_a: endpoint {
-					remote-endpoint = <&dsi0_out>;
+				sn65dsi86_in: endpoint {
+					remote-endpoint = <&mdss_dsi0_out>;
 				};
 			};
 
@@ -552,22 +756,6 @@
 				reg = <1>;
 				sn65dsi86_out: endpoint {
 					remote-endpoint = <&panel_in_edp>;
-				};
-			};
-		};
-
-		aux-bus {
-			panel: panel {
-				compatible = "innolux,p120zdg-bf1";
-				power-supply = <&vlcm_3p3>;
-
-				pinctrl-names = "default";
-				pinctrl-0 = <&bl_enable>;
-
-				port {
-					panel_in_edp: endpoint {
-						remote-endpoint = <&sn65dsi86_out>;
-					};
 				};
 			};
 		};
@@ -586,12 +774,27 @@
 	firmware-name = "qcom/sdm850/HUAWEI/AL09/ipa_fws.elf";
 };
 
-&llcc {
+&mdss {
 	status = "okay";
 };
 
-&mdss {
+&mdss_dsi0 {
 	status = "okay";
+	vdda-supply = <&vdda_mipi_dsi0_1p2>;
+
+	ports {
+		port@1 {
+			endpoint {
+				remote-endpoint = <&sn65dsi86_in>;
+				data-lanes = <0 1 2 3>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_phy {
+	status = "okay";
+	vdds-supply = <&vdda_mipi_dsi0_pll>;
 };
 
 &mss_pil {
@@ -600,14 +803,14 @@
 };
 
 &pcie0 {
-	vdda-supply = <&vdda_pcie_core>;
-	vdda-phy-supply = <&vdda_pcie_1p2>;
+	status = "okay";
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_default>;
 
-	status = "okay";
-	perst-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+	vddpe-3v3-supply = <&pcie0_3p3v_dual>;
+
+	perst-gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
 	enable-gpios = <&tlmm 134 GPIO_ACTIVE_HIGH>;
 };
 
@@ -619,13 +822,11 @@
 };
 
 &pcie1 {
-	vdda-supply = <&vdda_pcie_core>;
-	vdda-phy-supply = <&vdda_pcie_1p2>;
+	status = "okay";
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie1_default>;
 
-	status = "okay";
 	perst-gpios = <&tlmm 102 GPIO_ACTIVE_LOW>;
 };
 
@@ -636,31 +837,49 @@
 	status = "okay";
 };
 
-&pm8998_resin {
-	linux,code = <KEY_VOLUMEDOWN>;
-	status = "okay";
-};
-
 &pm8998_gpios {
-	//This pin is pulled down by a fixed resistor
 	sw_edp_1p2_en: pm8998-gpio9-state {
-		pinconf {
-			pins = "gpio9";
-			function = "normal";
-			bias-disable;
-			qcom,drive-strength = <0>;
-		};
+		pins = "gpio9";
+		function = "normal";
+		
+		bias-disable;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_NO>;
 	};
 
 	volume_up_gpio: pm8998-gpio6-state {
-		pinconf {
-			pins = "gpio6";
-			function = "normal";
-			input-enable;
-			bias-pull-up;
-			qcom,drive-strength = <0>;
-		};
+		pins = "gpio6";
+		function = "normal";
+		
+		input-enable;
+		bias-pull-up;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_NO>;
 	};
+};
+
+&pm8998_pwrkey {
+	status = "okay";
+	wakeup-source;
+};
+
+&pm8998_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+	wakeup-source;
+};
+
+&qup_i2c3_default {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_i2c5_default {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_i2c7_default {
+	drive-strength = <2>;
+	bias-disable;
 };
 
 &qup_i2c10_default {
@@ -668,23 +887,9 @@
 	bias-disable;
 };
 
-&qup_uart9_default {
-	pinconf-tx {
-		pins = "gpio4";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	pinconf-rx {
-		pins = "gpio5";
-		drive-strength = <2>;
-		bias-pull-up;
-	};
-};
-
-&uart9 {
-	label = "LS-UART1";
-	status = "okay";
+&qup_i2c12_default {
+	drive-strength = <2>;
+	bias-disable;
 };
 
 &qupv3_id_0 {
@@ -703,10 +908,6 @@
 	dai@1 {
 		reg = <1>;
 	};
-
-	dai@2 {
-		reg = <2>;
-	};
 };
 
 &sdhc_2 {
@@ -716,7 +917,7 @@
 	pinctrl-0 = <&sdc2_default_state &sdc2_card_det_n>;
 
 	vmmc-supply = <&vreg_l21a_2p95>;
-	vqmmc-supply = <&vreg_l13a_2p95>;
+	vqmmc-supply = <&vddpx_2>;
 
 	bus-width = <4>;
 	cd-gpios = <&tlmm 126 GPIO_ACTIVE_HIGH>;
@@ -727,21 +928,22 @@
 	status = "okay";
 };
 
+&spi8 {
+	status = "okay";
+};
+
 &sound {
-	compatible = "lenovo,yoga-c630-sndcard", "qcom,sdm845-sndcard";
+	compatible = "qcom,sdm845-sndcard";
 	model = "HUAWEI-PAK_AL09-M1040";
 
-	// Audio is broken, so set it to "disable" by default.
-	status = "disbale";
+	status = "okay";
 
 	audio-routing =
 		"RX_BIAS", "MCLK",
-		"AMIC2", "MIC BIAS2",
 		"SpkrLeft IN", "SPK1 OUT",
 		"SpkrRight IN", "SPK2 OUT",
 		"MM_DL1",  "MultiMedia1 Playback",
-		"MM_DL3",  "MultiMedia3 Playback",
-		"MultiMedia2 Capture", "MM_UL2";
+		"MM_DL2",  "MultiMedia2 Playback";
 
 	mm1-dai-link {
 		link-name = "MultiMedia1";
@@ -757,13 +959,6 @@
 		};
 	};
 
-	mm3-dai-link {
-		link-name = "MultiMedia3";
-		cpu {
-			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
-		};
-	};
-
 	slim-dai-link {
 		link-name = "SLIM Playback";
 		cpu {
@@ -776,21 +971,6 @@
 
 		codec {
 			sound-dai = <&left_spkr>, <&right_spkr>, <&swm 0>, <&wcd9340 0>;
-		};
-	};
-
-	slimcap-dai-link {
-		link-name = "SLIM Capture";
-		cpu {
-			sound-dai = <&q6afedai SLIMBUS_0_TX>;
-		};
-
-		platform {
-			sound-dai = <&q6routing>;
-		};
-
-		codec {
-			sound-dai = <&wcd9340 1>;
 		};
 	};
 
@@ -813,9 +993,38 @@
 &tlmm {
 	gpio-reserved-ranges = <0 4>, <81 4>;
 
+	/*
+	cam0_default: cam0_default {
+		rst {
+			pins = "gpio23";
+			function = "gpio";
+
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		mclk0 {
+			pins = "gpio13";
+			function = "cam_mclk";
+
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+	*/
+
+	cam_indicator_en: cam-indicator-en-state {
+		pins = "gpio12";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	sn65dsi86_pin_active: sn65dsi86-enable-state {
 		pins = "gpio96";
 		function = "gpio";
+
 		drive-strength = <2>;
 		bias-disable;
 	};
@@ -833,41 +1042,26 @@
 		pins = "gpio79";
 		function = "gpio";
 
-		input-enable;
 		bias-disable;
 	};
 
-	vlcm_3p3_en: vlcm-3p3-en-pin {
-		pins = "gpio88";
+	ec_int_default: ec-int-default-state {
+		pins = "gpio24";
 		function = "gpio";
+		
 		drive-strength = <2>;
-		bias-disable;
-	};
-
-	bl_enable: vl-enable-pin {
-		pins = "gpio11";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	ec_int_state: ec-int-state {
-		pins = "gpio140";
-		function = "gpio";
-
-		input-enable;
 		bias-disable;
 	};
 
 	pcie0_default: pcie0-default-state {
 		clkreq-pins {
-			pins = "gpio35";
+			pins = "gpio36";
 			function = "pci_e0";
 			bias-pull-up;
 		};
 
 		reset-n-pins {
-			pins = "gpio39";
+			pins = "gpio35";
 			function = "gpio";
 
 			drive-strength = <2>;
@@ -884,6 +1078,14 @@
 	    };
 	};
 
+	pcie0_pwren_state: pcie0-pwren-state {
+		pins = "gpio90";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	pcie1_default: pcie1-default-state {
 		perst-n-pins {
 			pins = "gpio102";
@@ -894,13 +1096,13 @@
 		};
 
 		clkreq-pins {
-			pins = "gpio102";
+			pins = "gpio103";
 			function = "pci_e1";
 			bias-pull-up;
 		};
 
 		reset-n-pins {
-			pins = "gpio104";
+			pins = "gpio113";
 			function = "gpio";
 
 			drive-strength = <16>;
@@ -909,7 +1111,7 @@
 		};
 
 		wake-n-pins {
-	    	pins = "gpio113";
+	    	pins = "gpio104";
 			function = "gpio";
 
 		    drive-strength = <2>;
@@ -927,13 +1129,13 @@
 		cmd-pins {
 			pins = "sdc2_cmd";
 			bias-pull-up;
-			drive-strength = <10>;
+			drive-strength = <16>;
 		};
 
 		data-pins {
 			pins = "sdc2_data";
 			bias-pull-up;
-			drive-strength = <10>;
+			drive-strength = <16>;
 		};
 	};
 
@@ -959,6 +1161,10 @@
 		vddch1-supply = <&vreg_l23a_3p3>;
 		max-speed = <3200000>;
 	};
+};
+
+&uart9 {
+	status = "okay";
 };
 
 &ufs_mem_hc {
@@ -1043,11 +1249,11 @@
 	vdd-tx-supply = <&vreg_s4a_1p8>;
 	vdd-rx-supply = <&vreg_s4a_1p8>;
 	vdd-io-supply = <&vreg_s4a_1p8>;
-	qcom,mbhc-buttons-vthreshold-microvolt = <50000 75000 100000 100000 100000 100000 100000 100000>;
-	qcom,mbhc-headset-vthreshold-microvolt = <100000>;
+	qcom,mbhc-buttons-vthreshold-microvolt = <75000 150000 237000 500000 500000 500000 500000 500000>;
+	qcom,mbhc-headset-vthreshold-microvolt = <1700000>;
 	qcom,mbhc-headphone-vthreshold-microvolt = <50000>;
 
-	swm: swm@c85 {
+	swm: soundwire@c85 {
 		left_spkr: speaker@0,3 {
 			compatible = "sdw10217211000";
 			reg = <0 3>;
@@ -1059,8 +1265,8 @@
 
 		right_spkr: speaker@0,4 {
 			compatible = "sdw10217211000";
-			powerdown-gpios = <&wcdgpio 2 GPIO_ACTIVE_LOW>;
 			reg = <0 4>;
+			powerdown-gpios = <&wcdgpio 2 GPIO_ACTIVE_LOW>;
 			#thermal-sensor-cells = <0>;
 			sound-name-prefix = "SpkrRight";
 			#sound-dai-cells = <0>;
