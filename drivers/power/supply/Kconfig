@@ -963,4 +963,15 @@ config LENOVO_YOGA_C630_EC
 
 	  Say M or Y here to include this support.
 
+config HUAWEI_PLANCK_EC
+	tristate "Huawei Planck EC battery driver"
+	depends on DRM
+	depends on I2C
+	help
+	  Driver for the Embedded Controller in the Qualcomm Snapdragon-based
+	  Huawei Matebook E 2019, which provides battery information and USB Type-C
+	  altmode notifications.
+
+	  Say M or Y here to include this support.
+
 endif # POWER_SUPPLY
